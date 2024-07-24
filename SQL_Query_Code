@@ -1,0 +1,110 @@
+# DATA RETRIEVAL USING SELECT STATEMENT
+
+select * from delivery_partner;
+select * from food; 
+select * from order_details;
+select * from menu;   
+select * from orders;
+select * from restaurants;
+select * from user;
+
+# DESC STATEMENT
+
+DESC delivery_partner ;
+DESC food;
+DESC order_details;
+DESC menu;
+DESC orders;
+DESC restaurants;
+DESC user;
+
+# SQL QUERIES
+
+# Q1. Find customers who have never ordered
+
+select name from user 
+where user_id not in (select user_id from orders);
+
+# Q2. Find the Average Price/dish
+
+select m.f_id,f.f_name ,avg(m.price) as avg_price
+from menu as m 
+join food as f
+on m.f_id=f.f_id
+group by m.f_id,f.f_name;
+
+# Q3. Find the top restaurant in terms of the number of orders for a given month
+
+select r_id,month_name, r_name,order_count 
+from (
+      select r.r_id,
+      monthname(o.date) as month_name,
+      r.r_name,
+      count(*) as order_count,
+      row_number() over(partition by monthname(o.date) order by count(*) desc) as num_row
+      from orders as o 
+      join restaurants as r 
+      on r.r_id=o.r_id
+      where monthname(o.date) in ("June","July","May")
+      group by month_name ,o.r_id
+) as rank_order
+where num_row = 1;     
+      
+# Q4. restaurants with monthly sales greater than x ( x is any integer number )
+
+select * from orders;
+
+select r.r_name,monthname(date) as month_name, sum(amount) as amount from restaurants r join orders as o
+on r.r_id=o.r_id
+where monthname(o.date) like ("June") and amount >500
+group by o.r_id
+order by amount desc;
+
+SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));
+
+# Q5. Show all orders with order details for a particular customer in a particular date range
+
+select o.order_id,u.name,f.f_name,r.r_name,o.date from user as u join orders as o 
+on u.user_id=o.user_id 
+join order_details as od 
+on o.order_id=od.order_id join food as f
+on f.f_id= od.f_id 
+join restaurants as r
+on r.r_id=o.r_id
+where u.name = "Nitish" and o.date between "2022-06-10" and "2022-07-10";
+
+# Q6. Find restaurants with max repeated customers 
+
+select o.user_id,name,r.r_id,r.r_name,f_name,o.date,count(*) as num_count from user as u join orders as o
+on u.user_id=o.user_id
+join restaurants as r 
+on r.r_id=o.r_id 
+join order_details as od 
+on o.order_id=od.order_id
+join food as f 
+on f.f_id =od.f_id
+where u.user_id = 5
+group by r.r_id,o.user_id
+order by num_count desc;
+
+# Q7. Month over month revenue growth of swiggy
+
+select month_name,((revenue-pre)/pre)*100 as "growth_%" from (
+with sales as
+(
+	select monthname(date) as month_name, sum(amount)as revenue from orders o
+	join restaurants as r 
+	on r.r_id=o.r_id
+	group by month_name
+)
+select month_name,revenue,lag(revenue,1) over(order by revenue) as pre from sales 
+) t;
+
+# Q8. Customer - favorite food
+
+select u.user_id,u.name,f_name,count(*) as count_order from user as u join orders as o
+on u.user_id= o.user_id join order_details as od 
+on od.order_id = o.order_id join food as f
+on od.f_id=f.f_id
+group by u.name
+order by u.user_id
