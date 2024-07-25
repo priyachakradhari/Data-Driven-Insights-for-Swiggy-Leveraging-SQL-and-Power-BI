@@ -1,4 +1,4 @@
-# Swiggy_Case_Study_SQL_Project
+# Swiggy_Case_Study Description
 
 This database README file provides a detailed description of the Swiggy case study dataset, which is designed for analyzing various aspects of Swiggy's food delivery service.This document serves as a guide to understanding the structure and content of the dataset, which can be used for SQL-based analysis and insights generation. 
 
